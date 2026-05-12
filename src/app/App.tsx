@@ -8,7 +8,9 @@ import { AudioUploadSection } from "@/app/components/AudioUploadSection";
 import { PitchVisualization } from "@/app/components/PitchVisualization";
 
 import { SingAlongSection } from "@/app/components/SingAlongSection";
+
 import { TimelineAudioPlayer } from "@/app/components/TimelineAudioPlayer";
+
 import {
   ArrowDown,
   SlidersHorizontal,
@@ -19,18 +21,17 @@ import {
   Note,
 } from "@/app/components/NoteTableEditor";
 
-import { mockNotes } from "@/mock/mockNotes";
-
 export default function App() {
 
   // ─────────────────────────────
   // STATES
   // ─────────────────────────────
   const [currentTime, setCurrentTime] =
-  useState(0);
+    useState(0);
 
-const [isPlaying, setIsPlaying] =
-  useState(false);
+  const [isPlaying, setIsPlaying] =
+    useState(false);
+
   const [curveMode, setCurveMode] =
     useState<"discrete" | "curved">(
       "discrete"
@@ -41,6 +42,9 @@ const [isPlaying, setIsPlaying] =
 
   const [notes, setNotes] =
     useState<Note[]>([]);
+
+  const [isAnalyzing, setIsAnalyzing] =
+    useState(false);
 
   const [isRecording, setIsRecording] =
     useState(false);
@@ -67,16 +71,74 @@ const [isPlaying, setIsPlaying] =
     useRef<HTMLElement>(null);
 
   // ─────────────────────────────
+  // BACKEND ANALYSIS
+  // ─────────────────────────────
+  const analyzeAudio =
+    async (
+      file: File
+    ) => {
+
+      try {
+
+        setIsAnalyzing(true);
+
+        const formData =
+          new FormData();
+
+        formData.append(
+          "file",
+          file
+        );
+
+        const response =
+          await fetch(
+            "https://web-production-e460a.up.railway.app/analyze",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Backend analysis failed"
+          );
+        }
+
+        const data =
+          await response.json();
+
+        setNotes(
+          data.notes || []
+        );
+
+      } catch (err) {
+
+        console.error(err);
+
+        alert(
+          "Audio analysis failed"
+        );
+
+      } finally {
+
+        setIsAnalyzing(false);
+      }
+    };
+
+  // ─────────────────────────────
   // FILE UPLOAD
   // ─────────────────────────────
-  const handleFileUploaded = (
-    file: File
-  ) => {
+  const handleFileUploaded =
+    async (
+      file: File
+    ) => {
 
-    setUploadedFile(file);
+      setUploadedFile(file);
 
-    setNotes(mockNotes.notes);
-  };
+      await analyzeAudio(file);
+    };
 
   // ─────────────────────────────
   // AUTO SCROLL
@@ -119,6 +181,7 @@ const [isPlaying, setIsPlaying] =
   // UI
   // ─────────────────────────────
   return (
+
     <div className="
       min-h-screen
       bg-gradient-to-b
@@ -175,7 +238,10 @@ const [isPlaying, setIsPlaying] =
           <>
 
             {/* ARROW */}
-            <div className="flex justify-center">
+            <div className="
+              flex
+              justify-center
+            ">
 
               <ArrowDown
                 className="
@@ -211,35 +277,59 @@ const [isPlaying, setIsPlaying] =
 
               </div>
 
+              {/* LOADING */}
+              {isAnalyzing && (
+
+                <div className="
+                  mb-4
+                  rounded-xl
+                  border border-green-500/30
+                  bg-green-500/10
+                  p-4
+                  text-green-300
+                  text-sm
+                  animate-pulse
+                ">
+
+                  Processing audio...
+                  Running vocal separation
+                  and pitch detection.
+
+                </div>
+              )}
+
               <div className="
                 relative
                 rounded-xl
                 overflow-hidden
               ">
-<TimelineAudioPlayer
-  uploadedFile={uploadedFile}
 
-  currentTime={currentTime}
-  setCurrentTime={setCurrentTime}
+                {/* AUDIO PLAYER */}
+                <TimelineAudioPlayer
+                  uploadedFile={uploadedFile}
 
-  isPlaying={isPlaying}
-  setIsPlaying={setIsPlaying}
-/>
+                  currentTime={currentTime}
+                  setCurrentTime={setCurrentTime}
+
+                  isPlaying={isPlaying}
+                  setIsPlaying={setIsPlaying}
+                />
+
                 {/* VISUALIZATION */}
                 <PitchVisualization
-  notes={notes}
+                  notes={notes}
 
-  isRecording={isRecording}
+                  isRecording={isRecording}
 
-  currentTime={currentTime}
-  setCurrentTime={setCurrentTime}
+                  currentTime={currentTime}
+                  setCurrentTime={setCurrentTime}
 
-  isPlaying={isPlaying}
+                  isPlaying={isPlaying}
 
-  showReliable={showReliable}
-  showUncertain={showUncertain}
-  showUnstable={showUnstable}
-/>
+                  showReliable={showReliable}
+                  showUncertain={showUncertain}
+                  showUnstable={showUnstable}
+                />
 
                 {/* NOTES BUTTON */}
                 <div className="
@@ -416,7 +506,10 @@ const [isPlaying, setIsPlaying] =
             </section>
 
             {/* ARROW */}
-            <div className="flex justify-center">
+            <div className="
+              flex
+              justify-center
+            ">
 
               <ArrowDown
                 className="
@@ -452,12 +545,12 @@ const [isPlaying, setIsPlaying] =
 
               </div>
 
-             <SingAlongSection
-  audioFile={uploadedFile}
-  onRecordingChange={
-    setIsRecording
-  }
-/>
+              <SingAlongSection
+                audioFile={uploadedFile}
+                onRecordingChange={
+                  setIsRecording
+                }
+              />
 
             </section>
 
