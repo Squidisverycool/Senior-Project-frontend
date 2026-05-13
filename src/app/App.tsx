@@ -14,6 +14,7 @@ import { TimelineAudioPlayer } from "@/app/components/TimelineAudioPlayer";
 import {
   ArrowDown,
   SlidersHorizontal,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -32,11 +33,6 @@ export default function App() {
   const [isPlaying, setIsPlaying] =
     useState(false);
 
-  const [curveMode, setCurveMode] =
-    useState<"discrete" | "curved">(
-      "discrete"
-    );
-
   const [uploadedFile, setUploadedFile] =
     useState<File | null>(null);
 
@@ -44,6 +40,9 @@ export default function App() {
     useState<Note[]>([]);
 
   const [isAnalyzing, setIsAnalyzing] =
+    useState(false);
+
+  const [analysisComplete, setAnalysisComplete] =
     useState(false);
 
   const [isRecording, setIsRecording] =
@@ -101,9 +100,12 @@ export default function App() {
 
         if (!response.ok) {
 
-          throw new Error(
-            "Backend analysis failed"
-          );
+          const text =
+            await response.text();
+
+          console.error(text);
+
+          throw new Error(text);
         }
 
         const data =
@@ -112,6 +114,8 @@ export default function App() {
         setNotes(
           data.notes || []
         );
+
+        setAnalysisComplete(true);
 
       } catch (err) {
 
@@ -137,6 +141,8 @@ export default function App() {
 
       setUploadedFile(file);
 
+      setAnalysisComplete(false);
+
       await analyzeAudio(file);
     };
 
@@ -146,7 +152,7 @@ export default function App() {
   useEffect(() => {
 
     if (
-      uploadedFile &&
+      analysisComplete &&
       visualizationRef.current
     ) {
 
@@ -158,10 +164,11 @@ export default function App() {
             block: "start",
           });
 
-      }, 500);
+      }, 300);
+
     }
 
-  }, [uploadedFile]);
+  }, [analysisComplete]);
 
   // ─────────────────────────────
   // PANEL TOGGLE
@@ -234,7 +241,100 @@ export default function App() {
 
         </section>
 
-        {uploadedFile && (
+        {/* FULLSCREEN LOADING */}
+        {isAnalyzing && (
+
+          <div className="
+            min-h-[70vh]
+            flex
+            flex-col
+            items-center
+            justify-center
+            gap-8
+          ">
+
+            {/* SPINNER */}
+            <div className="
+              relative
+              flex
+              items-center
+              justify-center
+            ">
+
+              <div className="
+                absolute
+                size-28
+                rounded-full
+                bg-green-500/10
+                blur-2xl
+              " />
+
+              <Loader2
+                className="
+                  size-16
+                  text-green-500
+                  animate-spin
+                "
+              />
+
+            </div>
+
+            {/* TEXT */}
+            <div className="
+              text-center
+              space-y-3
+            ">
+
+              <h2 className="
+                text-3xl
+                font-bold
+                text-white
+              ">
+                Analyzing Audio
+              </h2>
+
+              <p className="
+                text-zinc-400
+                max-w-lg
+                leading-relaxed
+              ">
+
+                Running vocal separation,
+                pitch detection,
+                reliability analysis,
+                and note segmentation...
+
+              </p>
+
+            </div>
+
+            {/* PROGRESS BAR */}
+            <div className="
+              w-full
+              max-w-xl
+              h-3
+              rounded-full
+              overflow-hidden
+              bg-zinc-800
+            ">
+
+              <div className="
+                h-full
+                w-full
+                bg-gradient-to-r
+                from-green-500
+                via-emerald-400
+                to-green-500
+                animate-pulse
+              " />
+
+            </div>
+
+          </div>
+        )}
+
+        {/* MAIN CONTENT */}
+        {analysisComplete && uploadedFile && (
           <>
 
             {/* ARROW */}
@@ -276,27 +376,6 @@ export default function App() {
                 </h2>
 
               </div>
-
-              {/* LOADING */}
-              {isAnalyzing && (
-
-                <div className="
-                  mb-4
-                  rounded-xl
-                  border border-green-500/30
-                  bg-green-500/10
-                  p-4
-                  text-green-300
-                  text-sm
-                  animate-pulse
-                ">
-
-                  Processing audio...
-                  Running vocal separation
-                  and pitch detection.
-
-                </div>
-              )}
 
               <div className="
                 relative
