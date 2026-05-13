@@ -1,6 +1,5 @@
 import {
-  useState,
-  useRef
+  useState
 } from "react";
 
 import {
@@ -16,14 +15,25 @@ interface SingAlongSectionProps {
 
   audioFile?: File | null;
 
+  currentTime: number;
+
+  isPlaying: boolean;
+
   onRecordingChange?: (
     isRecording: boolean
   ) => void;
 }
 
 export function SingAlongSection({
+
   audioFile,
+
+  currentTime,
+
+  isPlaying,
+
   onRecordingChange
+
 }: SingAlongSectionProps) {
 
   const [isRecording, setIsRecording] =
@@ -41,11 +51,6 @@ export function SingAlongSection({
   const [countdown, setCountdown] =
     useState<number | null>(null);
 
-  const audioRef =
-    useRef<HTMLAudioElement | null>(
-      null
-    );
-
   // ─────────────────────────────
   // TOGGLE RECORDING
   // ─────────────────────────────
@@ -60,14 +65,6 @@ export function SingAlongSection({
         onRecordingChange?.(
           false
         );
-
-        // STOP AUDIO
-        if (audioRef.current) {
-
-          audioRef.current.pause();
-
-          audioRef.current.currentTime = 0;
-        }
 
         return;
       }
@@ -119,23 +116,6 @@ export function SingAlongSection({
               onRecordingChange?.(
                 true
               );
-
-              // PLAY SONG
-              if (audioFile) {
-
-                const url =
-                  URL.createObjectURL(
-                    audioFile
-                  );
-
-                const audio =
-                  new Audio(url);
-
-                audioRef.current =
-                  audio;
-
-                audio.play();
-              }
             }
 
           }, 1000);
@@ -299,6 +279,22 @@ export function SingAlongSection({
             "
           >
             Microphone access denied
+          </Badge>
+        )}
+
+        {/* OPTIONAL DEBUG */}
+        {isRecording && (
+          <Badge
+            variant="outline"
+
+            className="
+              bg-blue-500/10
+              text-blue-400
+              border-blue-500/30
+              backdrop-blur-sm
+            "
+          >
+            Synced @ {currentTime.toFixed(1)}s
           </Badge>
         )}
 
