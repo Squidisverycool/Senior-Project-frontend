@@ -15,9 +15,9 @@ interface SingAlongSectionProps {
 
   audioFile?: File | null;
 
-  currentTime: number;
+  currentTime?: number;
 
-  isPlaying: boolean;
+  isPlaying?: boolean;
 
   onRecordingChange?: (
     isRecording: boolean
@@ -28,9 +28,9 @@ export function SingAlongSection({
 
   audioFile,
 
-  currentTime,
+  currentTime = 0,
 
-  isPlaying,
+  isPlaying = false,
 
   onRecordingChange
 
