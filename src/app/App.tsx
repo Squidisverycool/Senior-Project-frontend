@@ -14,7 +14,6 @@ import { TimelineAudioPlayer } from "@/app/components/TimelineAudioPlayer";
 import {
   ArrowDown,
   SlidersHorizontal,
-  Loader2,
 } from "lucide-react";
 
 import {
@@ -240,98 +239,6 @@ export default function App() {
           />
 
         </section>
-
-        {/* FULLSCREEN LOADING */}
-        {isAnalyzing && (
-
-          <div className="
-            min-h-[70vh]
-            flex
-            flex-col
-            items-center
-            justify-center
-            gap-8
-          ">
-
-            {/* SPINNER */}
-            <div className="
-              relative
-              flex
-              items-center
-              justify-center
-            ">
-
-              <div className="
-                absolute
-                size-28
-                rounded-full
-                bg-green-500/10
-                blur-2xl
-              " />
-
-              <Loader2
-                className="
-                  size-16
-                  text-green-500
-                  animate-spin
-                "
-              />
-
-            </div>
-
-            {/* TEXT */}
-            <div className="
-              text-center
-              space-y-3
-            ">
-
-              <h2 className="
-                text-3xl
-                font-bold
-                text-white
-              ">
-                Analyzing Audio
-              </h2>
-
-              <p className="
-                text-zinc-400
-                max-w-lg
-                leading-relaxed
-              ">
-
-                Running vocal separation,
-                pitch detection,
-                reliability analysis,
-                and note segmentation...
-
-              </p>
-
-            </div>
-
-            {/* PROGRESS BAR */}
-            <div className="
-              w-full
-              max-w-xl
-              h-3
-              rounded-full
-              overflow-hidden
-              bg-zinc-800
-            ">
-
-              <div className="
-                h-full
-                w-full
-                bg-gradient-to-r
-                from-green-500
-                via-emerald-400
-                to-green-500
-                animate-pulse
-              " />
-
-            </div>
-
-          </div>
-        )}
 
         {/* MAIN CONTENT */}
         {analysisComplete && uploadedFile && (
