@@ -21,6 +21,8 @@ import {
   Note,
 } from "@/app/components/NoteTableEditor";
 
+import { mockNotes } from "@/mock/mockNotes";
+
 export default function App() {
 
   // ─────────────────────────────
@@ -37,12 +39,6 @@ export default function App() {
 
   const [notes, setNotes] =
     useState<Note[]>([]);
-
-  const [isAnalyzing, setIsAnalyzing] =
-    useState(false);
-
-  const [analysisComplete, setAnalysisComplete] =
-    useState(false);
 
   const [isRecording, setIsRecording] =
     useState(false);
@@ -69,68 +65,6 @@ export default function App() {
     useRef<HTMLElement>(null);
 
   // ─────────────────────────────
-  // BACKEND ANALYSIS
-  // ─────────────────────────────
-  const analyzeAudio =
-    async (
-      file: File
-    ) => {
-
-      try {
-
-        setIsAnalyzing(true);
-
-        const formData =
-          new FormData();
-
-        formData.append(
-          "file",
-          file
-        );
-
-        const response =
-          await fetch(
-            "https://web-production-e460a.up.railway.app/analyze",
-            {
-              method: "POST",
-              body: formData,
-            }
-          );
-
-        if (!response.ok) {
-
-          const text =
-            await response.text();
-
-          console.error(text);
-
-          throw new Error(text);
-        }
-
-        const data =
-          await response.json();
-
-        setNotes(
-          data.notes || []
-        );
-
-        setAnalysisComplete(true);
-
-      } catch (err) {
-
-        console.error(err);
-
-        alert(
-          "Audio analysis failed"
-        );
-
-      } finally {
-
-        setIsAnalyzing(false);
-      }
-    };
-
-  // ─────────────────────────────
   // FILE UPLOAD
   // ─────────────────────────────
   const handleFileUploaded =
@@ -140,9 +74,10 @@ export default function App() {
 
       setUploadedFile(file);
 
-      setAnalysisComplete(false);
-
-      await analyzeAudio(file);
+      // MOCK DATA
+      setNotes(
+        mockNotes.notes || []
+      );
     };
 
   // ─────────────────────────────
@@ -151,7 +86,7 @@ export default function App() {
   useEffect(() => {
 
     if (
-      analysisComplete &&
+      uploadedFile &&
       visualizationRef.current
     ) {
 
@@ -167,7 +102,7 @@ export default function App() {
 
     }
 
-  }, [analysisComplete]);
+  }, [uploadedFile]);
 
   // ─────────────────────────────
   // PANEL TOGGLE
@@ -241,7 +176,7 @@ export default function App() {
         </section>
 
         {/* MAIN CONTENT */}
-        {analysisComplete && uploadedFile && (
+        {uploadedFile && (
           <>
 
             {/* ARROW */}
