@@ -78,7 +78,46 @@ export default function App() {
       setNotes(
         mockNotes.notes || []
       );
+
+      // RESET
+      setCurrentTime(0);
+
+      setIsPlaying(false);
     };
+
+  // ─────────────────────────────
+  // RECORDING SYNC
+  // ─────────────────────────────
+  const handleRecordingChange = (
+    recording: boolean
+  ) => {
+
+    setIsRecording(recording);
+
+    // START RECORDING
+    if (recording) {
+
+      // RESET GRAPH
+      setCurrentTime(0);
+
+      // RESTART SONG
+      setIsPlaying(false);
+
+      setTimeout(() => {
+
+        setCurrentTime(0);
+
+        setIsPlaying(true);
+
+      }, 50);
+    }
+
+    // STOP RECORDING
+    else {
+
+      setIsPlaying(false);
+    }
+  };
 
   // ─────────────────────────────
   // AUTO SCROLL
@@ -268,28 +307,28 @@ export default function App() {
                     }
 
                     className={`
-                      flex
-                      items-center
-                      gap-2
-                      px-3 py-2
-                      rounded-lg
-                      text-sm
-                      font-medium
-                      transition-all
-                      shadow-lg
-                      ${
-                        activePanel === "notes"
-                          ? "bg-green-500 text-black"
-                          : "bg-zinc-800/90 text-white hover:bg-zinc-700"
-                      }
-                    `}
-                  >
+  flex
+  items-center
+  gap-2
+  px-3 py-2
+  rounded-lg
+  text-sm
+  font-medium
+  transition-all
+  shadow-lg
+  ${
+    activePanel === "notes"
+      ? "bg-green-500 text-black"
+      : "bg-zinc-800/90 text-white hover:bg-zinc-700"
+  }
+`}
+                    >
 
-                    <SlidersHorizontal
-                      className="size-4"
-                    />
+                      <SlidersHorizontal
+                        className="size-4"
+                      />
 
-                    Notes
+                      Notes
 
                   </button>
 
@@ -468,8 +507,9 @@ export default function App() {
 
               <SingAlongSection
                 audioFile={uploadedFile}
+
                 onRecordingChange={
-                  setIsRecording
+                  handleRecordingChange
                 }
               />
 
