@@ -1,34 +1,31 @@
 import {
-  Play,
-  Pause,
-  RotateCcw,
-} from "lucide-react";
-
-import {
   useEffect,
   useRef,
+  useState
 } from "react";
+
+import {
+  Play,
+  Pause
+} from "lucide-react";
 
 interface Props {
 
-  uploadedFile:
-    File | null;
+  uploadedFile?: File | null;
 
-  currentTime:
-    number;
+  currentTime: number;
 
-  setCurrentTime:
-    (
-      time: number
-    ) => void;
+  setCurrentTime: (
+    t: number
+  ) => void;
 
-  isPlaying:
-    boolean;
+  isPlaying: boolean;
 
-  setIsPlaying:
-    (
-      playing: boolean
-    ) => void;
+  setIsPlaying: (
+    b: boolean
+  ) => void;
+
+  disabled?: boolean;
 }
 
 export function TimelineAudioPlayer({
@@ -41,273 +38,313 @@ export function TimelineAudioPlayer({
   isPlaying,
   setIsPlaying,
 
+  disabled = false
+
 }: Props) {
 
   const audioRef =
-    useRef<HTMLAudioElement>(null);
+    useRef<HTMLAudioElement | null>(
+      null
+    );
+
+  const [duration, setDuration] =
+    useState(0);
 
   // ─────────────────────────────
-  // LOAD FILE
+  // LOAD AUDIO
   // ─────────────────────────────
-  useEffect(() => {
+ // ─────────────────────────────
+// LOAD AUDIO
+// ─────────────────────────────
+useEffect(() => {
 
-    if (
-      uploadedFile &&
-      audioRef.current
-    ) {
+  // destroy previous audio completely
+  if (audioRef.current) {
 
-      const url =
-        URL.createObjectURL(
-          uploadedFile
-        );
+    audioRef.current.pause();
 
-      audioRef.current.src = url;
+    audioRef.current.src = "";
 
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    }
+    audioRef.current = null;
+  }
 
-  }, [uploadedFile]);
+  if (!uploadedFile) return;
 
-  // ─────────────────────────────
-  // PLAY / PAUSE SYNC
-  // ─────────────────────────────
-  useEffect(() => {
+  const url =
+    URL.createObjectURL(
+      uploadedFile
+    );
 
-    const audio =
-      audioRef.current;
+  const audio =
+    new Audio(url);
 
-    if (!audio) return;
+  audioRef.current = audio;
 
-    // FORCE RESET IF TIME RESET
-    if (currentTime === 0) {
+  const handleLoadedMetadata =
+    () => {
 
-      audio.pause();
-
-      audio.currentTime = 0;
-    }
-
-    if (isPlaying) {
-
-      audio.currentTime =
-        currentTime;
-
-      audio.play();
-
-    } else {
-
-      audio.pause();
-    }
-
-  }, [isPlaying]);
-
-  // ─────────────────────────────
-  // TIMELINE SYNC
-  // ─────────────────────────────
-  useEffect(() => {
-
-    const audio =
-      audioRef.current;
-
-    if (!audio) return;
-
-    const delta =
-      Math.abs(
-        audio.currentTime
-        - currentTime
+      setDuration(
+        audio.duration
       );
+    };
 
-    // PREVENT CONSTANT SEEKING
-    if (delta > 0.15) {
-
-      audio.currentTime =
-        currentTime;
-    }
-
-  }, [currentTime]);
-
-  // ─────────────────────────────
-  // AUDIO EVENTS
-  // ─────────────────────────────
-  useEffect(() => {
-
-    const audio =
-      audioRef.current;
-
-    if (!audio) return;
-
-    const updateTime = () => {
+  const handleTimeUpdate =
+    () => {
 
       setCurrentTime(
         audio.currentTime
       );
     };
 
-    const onEnded = () => {
+  const handleEnded =
+    () => {
 
       setIsPlaying(false);
 
       setCurrentTime(0);
-
-      audio.currentTime = 0;
     };
 
-    audio.addEventListener(
-      "timeupdate",
-      updateTime
-    );
+  audio.addEventListener(
+    "loadedmetadata",
+    handleLoadedMetadata
+  );
 
-    audio.addEventListener(
-      "ended",
-      onEnded
-    );
+  audio.addEventListener(
+    "timeupdate",
+    handleTimeUpdate
+  );
 
-    return () => {
+  audio.addEventListener(
+    "ended",
+    handleEnded
+  );
 
-      audio.removeEventListener(
-        "timeupdate",
-        updateTime
-      );
-
-      audio.removeEventListener(
-        "ended",
-        onEnded
-      );
-    };
-
-  }, []);
-
-  // ─────────────────────────────
-  // TOGGLE
-  // ─────────────────────────────
-  const togglePlayback = () => {
-
-    setIsPlaying(
-      !isPlaying
-    );
-  };
-
-  // ─────────────────────────────
-  // RESET
-  // ─────────────────────────────
-  const resetPlayback = () => {
-
-    const audio =
-      audioRef.current;
-
-    if (!audio) return;
+  return () => {
 
     audio.pause();
 
-    audio.currentTime = 0;
+    audio.removeEventListener(
+      "loadedmetadata",
+      handleLoadedMetadata
+    );
 
-    setCurrentTime(0);
+    audio.removeEventListener(
+      "timeupdate",
+      handleTimeUpdate
+    );
 
-    setIsPlaying(false);
+    audio.removeEventListener(
+      "ended",
+      handleEnded
+    );
+
+    audio.src = "";
+
+    URL.revokeObjectURL(url);
+  };
+
+}, [uploadedFile]);
+
+  // ─────────────────────────────
+  // SYNC PLAYBACK STATE
+  // ─────────────────────────────
+ // ─────────────────────────────
+// SYNC PLAYBACK STATE
+// ─────────────────────────────
+useEffect(() => {
+
+  const audio =
+    audioRef.current;
+
+  if (!audio) return;
+
+  if (isPlaying) {
+
+    // prevent duplicate play calls
+    if (audio.paused) {
+
+      audio.play();
+    }
+
+  } else {
+
+    audio.pause();
+  }
+
+}, [isPlaying]);
+  // ─────────────────────────────
+// RESET AUDIO WHEN TIME = 0
+// ─────────────────────────────
+useEffect(() => {
+
+  if (
+    !audioRef.current
+  ) return;
+
+  // only hard sync when rewinding
+ if (
+  currentTime === 0 &&
+  audioRef.current.currentTime !== 0
+) {
+
+  audioRef.current.pause();
+
+  audioRef.current.currentTime = 0;
+}
+
+}, [currentTime]);
+
+  // ─────────────────────────────
+  // PLAY / PAUSE
+  // ─────────────────────────────
+  const togglePlayback =
+    () => {
+
+      if (
+        disabled
+      ) return;
+
+      if (
+        !audioRef.current
+      ) return;
+
+      setIsPlaying(
+        !isPlaying
+      );
+    };
+
+  // ─────────────────────────────
+  // SEEK
+  // ─────────────────────────────
+  const seek = (
+    time: number
+  ) => {
+
+    if (
+      disabled
+    ) return;
+
+    if (
+      !audioRef.current
+    ) return;
+
+    audioRef.current.currentTime =
+      time;
+
+    setCurrentTime(time);
   };
 
   return (
 
-    <div className="
-      flex
-      items-center
-      gap-3
-      bg-zinc-900
-      border-b
-      border-zinc-700
-      px-4
-      py-3
-    ">
-
-      {/* PLAY */}
-      <button
-        onClick={togglePlayback}
-        className="
-          size-10
-          rounded-full
-          bg-green-500
-          text-black
-          flex
-          items-center
-          justify-center
-          hover:scale-105
-          transition-all
-        "
-      >
-
-        {isPlaying
-          ? <Pause className="size-5" />
-          : <Play className="size-5" />
+    <div
+      className={`
+        mt-6
+        rounded-xl
+        border border-zinc-700
+        bg-zinc-900
+        p-4
+        space-y-4
+        transition-opacity
+        ${
+          disabled
+            ? "opacity-75"
+            : ""
         }
+      `}
+    >
 
-      </button>
-
-      {/* RESET */}
-      <button
-        onClick={resetPlayback}
+      <div
         className="
-          size-10
-          rounded-full
-          bg-zinc-800
-          text-white
           flex
           items-center
-          justify-center
-          hover:bg-zinc-700
-          transition-all
+          gap-3
         "
       >
 
-        <RotateCcw className="size-5" />
-
-      </button>
-
-      {/* TIMELINE */}
-      <div className="flex-1">
-
-        <input
-          type="range"
-
-          min={0}
-
-          max={
-            audioRef.current
-              ?.duration || 0
+        <button
+          onClick={
+            togglePlayback
           }
 
-          step={0.01}
+          disabled={disabled}
 
-          value={currentTime}
-
-          onChange={(e) => {
-
-            const t =
-              Number(
-                e.target.value
-              );
-
-            setCurrentTime(t);
-
-            if (
-              audioRef.current
-            ) {
-
-              audioRef.current.currentTime =
-                t;
+          className={`
+            rounded-lg
+            p-2
+            transition-all
+            ${
+              disabled
+                ? "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-400 text-black"
             }
-          }}
+          `}
+        >
 
+          {isPlaying
+            ? (
+              <Pause className="size-5" />
+            )
+            : (
+              <Play className="size-5" />
+            )
+          }
+
+        </button>
+
+        <div
           className="
-            w-full
+            text-sm
+            text-zinc-300
+            font-mono
           "
-        />
+        >
+          {currentTime.toFixed(2)}s
+        </div>
+
+        {disabled && (
+          <div
+            className="
+              text-xs
+              text-yellow-400
+              font-medium
+            "
+          >
+            Locked during recording
+          </div>
+        )}
 
       </div>
 
-      {/* AUDIO */}
-      <audio
-        ref={audioRef}
+      {/* TIMELINE */}
+      <input
+        type="range"
+
+        min={0}
+
+        max={duration || 1}
+
+        step={0.01}
+
+        value={currentTime}
+
+        disabled={disabled}
+
+        onChange={(e) =>
+          seek(
+            Number(
+              e.target.value
+            )
+          )
+        }
+
+        className={`
+          w-full
+          ${
+            disabled
+              ? "cursor-not-allowed opacity-60"
+              : ""
+          }
+        `}
       />
 
     </div>

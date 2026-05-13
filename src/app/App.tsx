@@ -88,36 +88,33 @@ export default function App() {
   // ─────────────────────────────
   // RECORDING SYNC
   // ─────────────────────────────
-  const handleRecordingChange = (
-    recording: boolean
-  ) => {
+const handleRecordingChange = (
+  recording: boolean
+) => {
 
-    setIsRecording(recording);
+  setIsRecording(recording);
 
-    // START RECORDING
-    if (recording) {
+  // START RECORDING
+  if (recording) {
 
-      // RESET GRAPH
-      setCurrentTime(0);
+    // rewind preview player
+    setIsPlaying(false);
 
-      // RESTART SONG
-      setIsPlaying(false);
+    setCurrentTime(0);
 
-      setTimeout(() => {
+    // let React flush first
+    requestAnimationFrame(() => {
 
-        setCurrentTime(0);
+      setIsPlaying(true);
+    });
+  }
 
-        setIsPlaying(true);
+  // STOP RECORDING
+  else {
 
-      }, 50);
-    }
-
-    // STOP RECORDING
-    else {
-
-      setIsPlaying(false);
-    }
-  };
+    setIsPlaying(false);
+  }
+};
 
   // ─────────────────────────────
   // AUTO SCROLL
@@ -266,14 +263,16 @@ export default function App() {
 
                 {/* AUDIO PLAYER */}
                 <TimelineAudioPlayer
-                  uploadedFile={uploadedFile}
+  uploadedFile={uploadedFile}
 
-                  currentTime={currentTime}
-                  setCurrentTime={setCurrentTime}
+  currentTime={currentTime}
+  setCurrentTime={setCurrentTime}
 
-                  isPlaying={isPlaying}
-                  setIsPlaying={setIsPlaying}
-                />
+  isPlaying={isPlaying}
+  setIsPlaying={setIsPlaying}
+
+  disabled={isRecording}
+/>
 
                 {/* VISUALIZATION */}
                 <PitchVisualization
