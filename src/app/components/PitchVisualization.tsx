@@ -48,8 +48,21 @@ interface Props {
 
 const NOTE_TO_VALUE: Record<string, number> = {
 
-  // SILENCE
   silence: 0,
+
+  // C2 → B2
+  C2: -12,
+  "C#2": -11,
+  D2: -10,
+  "D#2": -9,
+  E2: -8,
+  F2: -7,
+  "F#2": -6,
+  G2: -5,
+  "G#2": -4,
+  A2: -3,
+  "A#2": -2,
+  B2: -1,
 
   // C3 → B3
   C3: 0,
